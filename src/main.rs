@@ -1,7 +1,10 @@
+mod storage;
+
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use storage::ChatStorage;
+use std::fs;
 
 const TOOLHOUSE_BASE_URL: &str = "https://agents.toolhouse.ai/1356d033-69af-4a2e-9da2-1c1ee3807902";
 
@@ -13,11 +16,9 @@ struct ChatMessage {
 #[derive(Debug, Deserialize)]
 struct ChatResponse {
     response: Option<String>,
-    #[serde(flatten)]
-    extra: HashMap<String, serde_json::Value>,
 }
 
-async fn start_new_chat(message: &str) -> Result<String> {
+async fn start_new_chat(message: &str) -> Result<(String, String)> {
     let client = reqwest::Client::new();
     
     println!("Sending request to: {}", TOOLHOUSE_BASE_URL);
@@ -57,7 +58,7 @@ async fn start_new_chat(message: &str) -> Result<String> {
             response_text
         ))?;
     
-    Ok(run_id)
+    Ok((run_id, response_text))
 }
 
 async fn continue_chat(run_id: &str, message: &str) -> Result<()> {
@@ -113,31 +114,52 @@ struct Cli {
 enum Commands {
     /// Start a new chat session
     New {
+        /// Name for this chat
+        name: String,
         /// Your message to start the chat
         message: String,
     },
     /// Continue an existing chat session
     Continue {
-        /// The run ID of the existing chat
-        run_id: String,
+        /// The name of the chat to continue
+        name: String,
         /// Your message
         message: String,
     },
+    /// List all available chats
+    List,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Cli::parse();
+    let mut storage = ChatStorage::load()?;
 
     match args.command {
-        Commands::New { message } => {
-            println!("Starting new chat...");
-            let run_id = start_new_chat(&message).await?;
-            println!("New chat started with ID: {}", run_id);
+        Commands::New { name, message } => {
+            println!("Starting new chat '{}'...", name);
+            let (run_id, ai_message) = start_new_chat(&message).await?;
+            storage.add_chat(&name, &run_id)?;
+            println!("New chat '{}' started with ID: {}", name, run_id);
+            let file_name = format!("{}.txt", name);
+            let _ = fs::write(file_name.clone(), message)?;
+            let _ = fs::write(file_name.clone(), ai_message)?;
         }
-        Commands::Continue { run_id, message } => {
-            println!("Continuing chat {}...", run_id);
+        Commands::Continue { name, message } => {
+            println!("Continuing chat '{}'...", name);
+            let run_id = storage.get_run_id(&name)?;
             continue_chat(&run_id, &message).await?;
+        }
+        Commands::List => {
+            let chats = storage.list_chats();
+            if chats.is_empty() {
+                println!("No chats found.");
+            } else {
+                println!("Available chats:");
+                for chat in chats {
+                    println!("- {}", chat);
+                }
+            }
         }
     }
 
