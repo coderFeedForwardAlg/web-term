@@ -1,0 +1,29 @@
+Creating a .cube LUT (Look-Up Table) for a cinematic look involves defining specific color grading parameters. While I can't create files directly, I can guide you through the process of creating a .cube LUT using software like Adobe Premiere Pro, DaVinci Resolve, or even online LUT generators.
+
+### Steps to Create a Cinematic LUT:
+
+1. **Choose Your Software**: Use a video editing software that supports LUT creation, such as DaVinci Resolve or Adobe Premiere Pro.
+
+2. **Import Your Footage**: Load a clip that you want to grade.
+
+3. **Color Grading**:
+   - **Adjust Contrast**: Increase contrast to make the image pop.
+   - **Color Wheels**: Use the color wheels to adjust shadows, midtones, and highlights. A common cinematic look involves adding a teal tint to the shadows and an orange tint to the highlights.
+   - **Saturation**: Slightly reduce saturation for a more muted look, or adjust it to your preference.
+   - **Curves**: Use RGB curves to create an S-curve for contrast and adjust the color channels for a stylized look.
+
+4. **Export the LUT**:
+   - In DaVinci Resolve, go to the "Color" tab, right-click on the node, and select "Generate 3D LUT."
+   - In Adobe Premiere Pro, you can use the Lumetri Color panel and then export the LUT from the "Creative" tab.
+
+5. **Save as .cube**: Ensure you save the LUT in the .cube format.
+
+### Example LUT Settings for a Cinematic Look:
+- **Contrast**: +20%
+- **Shadows**: -10% Blue, +10% Green
+- **Midtones**: +10% Red
+- **Highlights**: +10% Orange
+- **Saturation**: -10%
+- **Curves**: S-curve applied to RGB channels.
+
+If you need a specific LUT or want to use an online generator, let me know, and I can help you find one!

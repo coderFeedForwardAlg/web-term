@@ -8,7 +8,9 @@ const STORAGE_FILE: &str = "chats.json";
 const CHAT_STORAGE_FILE: &str = "chats.txt";
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ChatStorage {
+    #[serde(default)]
     chats: HashMap<String, String>, // name -> run_id
+    #[serde(default)]
     contents: HashMap<String, String>,
 }
 

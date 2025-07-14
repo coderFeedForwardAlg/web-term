@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use storage::ChatStorage;
 use std::fs;
 
-const TOOLHOUSE_BASE_URL: &str = "https://agents.toolhouse.ai/1356d033-69af-4a2e-9da2-1c1ee3807902";
+const TOOLHOUSE_BASE_URL: &str = "";
 
 #[derive(Debug, Serialize)]
 struct ChatMessage {
