@@ -1,0 +1,76 @@
+You’re on the right track with your architecture. Here’s a high-level overview and best practices for your scenario:
+
+## 1. Data Storage Design
+
+- **User Data**: Store user information (username, email, password hash, etc.) in PostgreSQL.
+- **Video Metadata**: Store video metadata (title, description, upload date, user_id, video path, thumbnail path, etc.) in PostgreSQL.
+- **Video Files & Images**: Store the actual video and image files in MinIO (S3-compatible object storage).
+
+**Yes, you should store the S3/MinIO object path (or URL) in your SQL table** so you can associate each video with the correct user and retrieve the file when needed.
+
+### Example Table Structure
+
+**users**
+| id | username | email | ... |
+
+**videos**
+| id | user_id | title | description | minio_path | thumbnail_path | upload_date | ... |
+
+## 2. Handling Upload Consistency
+
+You want to avoid a situation where a video record is created in PostgreSQL, but the file upload to MinIO fails (or vice versa). This is a classic distributed transaction problem.
+
+### Best Practice: Two-Phase Commit (Manual)
+
+1. **Upload to MinIO First**:  
+   - The user uploads the video file to your backend.
+   - Your backend uploads the file to MinIO.
+   - If the upload to MinIO is successful, you get the file path (or URL).
+
+2. **Insert Metadata in PostgreSQL**:  
+   - Only after a successful MinIO upload, insert the video metadata (including the MinIO path) into PostgreSQL.
+   - If the database insert fails, you can optionally delete the file from MinIO to keep things clean.
+
+3. **Error Handling**:  
+   - If the MinIO upload fails, do not insert anything into PostgreSQL.
+   - If the PostgreSQL insert fails, delete the file from MinIO.
+
+### Pseudocode Example
+
+```python
+def upload_video(user_id, video_file, metadata):
+    # 1. Upload to MinIO
+    minio_path = upload_to_minio(video_file)
+    if not minio_path:
+        return "Upload to storage failed"
+
+    # 2. Insert metadata into PostgreSQL
+    try:
+        insert_video_metadata(user_id, metadata, minio_path)
+    except Exception as e:
+        # Rollback: delete from MinIO if DB insert fails
+        delete_from_minio(minio_path)
+        return "Database insert failed"
+
+    return "Success"
+```
+
+## 3. Downloading Videos
+
+- When a user wants to download a video, look up the MinIO path in PostgreSQL and generate a signed URL (if needed) for secure access.
+
+## 4. Other Considerations
+
+- **Transactions**: You can’t have a true distributed transaction between PostgreSQL and MinIO, but the above pattern (upload first, then insert metadata, with cleanup on failure) is the standard approach.
+- **Background Jobs**: For large files, consider using background jobs and status tracking.
+- **Presigned URLs**: For direct uploads from the client, you can generate presigned URLs from MinIO, but you still need to handle the metadata insert after confirming the upload.
+
+---
+
+**Summary:**  
+- Store user and video metadata in PostgreSQL, file paths included.
+- Store actual files in MinIO.
+- Always upload to MinIO first, then insert metadata into PostgreSQL.
+- Clean up if either step fails to keep your data consistent.
+
+Let me know if you want code samples for a specific language or framework!

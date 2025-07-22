@@ -1,11 +1,13 @@
 {
   "chats": {
-    "test_chat": "9e23bdb4-de21-4c29-87ec-be505fd58e7b",
-    "ffmpeg": "74bf77f9-8c45-4b82-8e37-04647b9aeacb",
     "faster ffmpeg": "4119f652-f943-4b5d-969b-ef761348dcc0",
     "bashrc_setup": "3bd519d9-75e0-44ef-bc17-3263c0a04d86",
+    "destributed": "158575d8-ecb4-4975-bc0c-0c0339fabb73",
+    "ffmpeg": "74bf77f9-8c45-4b82-8e37-04647b9aeacb",
+    "video storage": "08468ac6-97a3-4d7f-a667-bb7d6d377d50",
+    "test_chat": "9e23bdb4-de21-4c29-87ec-be505fd58e7b",
     "color": "ac7cfc73-f680-46cc-abaf-7a7257b59a4b",
-    "destributed": "158575d8-ecb4-4975-bc0c-0c0339fabb73"
+    "kube": "0ddcbfa3-4f6d-4b72-bc6a-24b8edee33f6"
   },
   "contents": {}
 }

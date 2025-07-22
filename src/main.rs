@@ -4,9 +4,8 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use storage::ChatStorage;
-use std::fs;
 
-const TOOLHOUSE_BASE_URL: &str = "";
+const TOOLHOUSE_BASE_URL: &str = "https://agents.toolhouse.ai/1356d033-69af-4a2e-9da2-1c1ee3807902" ;
 
 #[derive(Debug, Serialize)]
 struct ChatMessage {
@@ -61,7 +60,7 @@ async fn start_new_chat(message: &str) -> Result<(String, String)> {
     Ok((run_id, response_text))
 }
 
-async fn continue_chat(run_id: &str, message: &str) -> Result<()> {
+async fn continue_chat(run_id: &str, message: &str) -> Result<String> {
     let client = reqwest::Client::new();
     let url = format!("{}/{}", TOOLHOUSE_BASE_URL, run_id);
     
@@ -95,11 +94,13 @@ async fn continue_chat(run_id: &str, message: &str) -> Result<()> {
         if let Ok(response_body) = serde_json::from_str::<ChatResponse>(&response_text) {
             if let Some(response_text) = response_body.response {
                 println!("Response: {}", response_text);
+                return Ok(response_text);
             }
         }
     }
     
-    Ok(())
+    // If we couldn't parse a proper response, return the raw text
+    Ok(response_text)
 }
 
 #[derive(Debug, Parser)]
@@ -141,14 +142,16 @@ async fn main() -> Result<()> {
             let (run_id, ai_message) = start_new_chat(&message).await?;
             storage.add_chat(&name, &run_id)?;
             println!("New chat '{}' started with ID: {}", name, run_id);
-            let file_name = format!("{}.txt", name);
-            let _ = fs::write(file_name.clone(), message)?;
-            let _ = fs::write(file_name.clone(), ai_message)?;
+            // Store the conversation history with proper formatting
+            storage.store_chat_history(&name, &message, &ai_message)?;
         }
         Commands::Continue { name, message } => {
             println!("Continuing chat '{}'...", name);
             let run_id = storage.get_run_id(&name)?;
-            continue_chat(&run_id, &message).await?;
+            let response = continue_chat(&run_id, &message).await?;
+            
+            // Store the continued conversation
+            storage.store_chat_history(&name, &message, &response)?;
         }
         Commands::List => {
             let chats = storage.list_chats();
