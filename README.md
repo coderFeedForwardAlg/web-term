@@ -2,16 +2,6 @@
 
 A command-line interface for interacting with Toolhouse AI chat sessions. This tool allows you to start new chat sessions, continue existing ones, and list all available chats.
 
-## Installation
-
-1. Make sure you have Rust installed on your system. If not, install it from [rustup.rs](https://rustup.rs/)
-2. Clone this repository
-3. Build the project:
-   ```bash
-   cargo build --release
-   ```
-4. The binary will be available at `target/release/web-term`
-
 ## Usage
 
 ### Start a New Chat
@@ -19,12 +9,9 @@ A command-line interface for interacting with Toolhouse AI chat sessions. This t
 To start a new chat session, use the `new` command:
 
 ```bash
-./web-term new --name "chat_name" --message "Your initial message here"
+cargo run -- new "chat_name" "Your initial message here"
 ```
 
-**Flags:**
-- `--name` or `-n`: A name for your chat session (required)
-- `--message` or `-m`: Your initial message to start the chat (required)
 
 ### Continue an Existing Chat
 
@@ -49,17 +36,12 @@ cargo run -- list
 
 1. Start a new chat about image processing:
    ```bash
-   ./web-term -- new "image_help" "How can I resize images using Python?"
+   cargo run -- new "image_help" "How can I resize images using Python?"
    ```
 
 2. Continue the conversation later:
    ```bash
-   ./web-term -- continue "image_help" "That's helpful! How about batch processing?"
-   ```
-
-3. List all your chats:
-   ```bash
-   ./web-term list
+   cargo run -- continue "image_help" "That's helpful! How about batch processing?"
    ```
 
 ## Notes
