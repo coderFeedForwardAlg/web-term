@@ -4,6 +4,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use storage::ChatStorage;
+use std::io::{self, Write};
 
 const TOOLHOUSE_BASE_URL: &str = "https://agents.toolhouse.ai/1356d033-69af-4a2e-9da2-1c1ee3807902" ;
 
@@ -103,6 +104,31 @@ async fn continue_chat(run_id: &str, message: &str) -> Result<String> {
     Ok(response_text)
 }
 
+async fn chat_loop(storage: &mut ChatStorage, name: &str, run_id: &str) -> Result<()> {
+    loop {
+        print!("You: ");
+        io::stdout().flush()?;
+
+        let mut user_message = String::new();
+        io::stdin().read_line(&mut user_message)?;
+        let user_message = user_message.trim();
+
+        if user_message == "/bye" {
+            break;
+        }
+
+        if user_message.is_empty() {
+            continue;
+        }
+
+        let ai_response = continue_chat(run_id, user_message).await?;
+        println!("AI: {}", ai_response);
+
+        storage.store_chat_history(name, user_message, &ai_response)?;
+    }
+    Ok(())
+}
+
 #[derive(Debug, Parser)]
 #[command(name = "toolhouse-chat")]
 #[command(about = "CLI for interacting with Toolhouse AI")]
@@ -121,11 +147,9 @@ enum Commands {
         message: String,
     },
     /// Continue an existing chat session
-    Continue {
+    Chat {
         /// The name of the chat to continue
         name: String,
-        /// Your message
-        message: String,
     },
     /// List all available chats
     List,
@@ -142,16 +166,15 @@ async fn main() -> Result<()> {
             let (run_id, ai_message) = start_new_chat(&message).await?;
             storage.add_chat(&name, &run_id)?;
             println!("New chat '{}' started with ID: {}", name, run_id);
+            println!("AI: {}", ai_message);
             // Store the conversation history with proper formatting
             storage.store_chat_history(&name, &message, &ai_message)?;
+            chat_loop(&mut storage, &name, &run_id).await?;
         }
-        Commands::Continue { name, message } => {
+        Commands::Chat { name } => {
             println!("Continuing chat '{}'...", name);
             let run_id = storage.get_run_id(&name)?;
-            let response = continue_chat(&run_id, &message).await?;
-            
-            // Store the continued conversation
-            storage.store_chat_history(&name, &message, &response)?;
+            chat_loop(&mut storage, &name, &run_id).await?;
         }
         Commands::List => {
             let chats = storage.list_chats();
